@@ -171,6 +171,47 @@ contract EscrowFactory {
     //         revert InsufficientEscrowBalance();
     //     }
     // }
+    /**
+     * @notice Creates a new escrow contract for the source chain.
+     * @param immutables The immutables of the escrow contract.
+     */
+    function createSrcEscrow(
+        IBaseEscrow.Immutables calldata immutables
+    ) external payable {
+        address token = immutables.token.get();
+        uint256 nativeAmount = immutables.safetyDeposit;
+        if (token == address(0)) {
+            nativeAmount += immutables.amount;
+        }
+        if (msg.value != nativeAmount) revert InsufficientEscrowBalance();
+
+        IBaseEscrow.Immutables memory srcImmutables = immutables;
+        srcImmutables.timelocks = srcImmutables.timelocks.setDeployedAt(
+            block.timestamp
+        );
+
+        bytes32 salt = srcImmutables.hashMem();
+        address escrow = _deployEscrow(
+            salt,
+            msg.value,
+            ESCROW_SRC_IMPLEMENTATION
+        );
+
+        if (token != address(0)) {
+            IERC20(token).safeTransferFrom(
+                msg.sender,
+                escrow,
+                immutables.amount
+            );
+        }
+
+        emit SrcEscrowCreated(
+            escrow,
+            immutables.hashlock,
+            immutables.maker.get(),
+            immutables.taker.get()
+        );
+    }
 
     /**
      * @notice See {IEscrowFactory-createDstEscrow}.
