@@ -1,0 +1,3 @@
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+@1inch/solidity-utils/=lib/solidity-utils/
+solidity-utils/=lib/solidity-utils/
